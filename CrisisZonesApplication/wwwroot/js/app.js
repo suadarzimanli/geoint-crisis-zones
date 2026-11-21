@@ -198,6 +198,25 @@
     document.head.appendChild(s);
   }
 
+  const isDark = () => !!(window.CrisisZonesTheme && window.CrisisZonesTheme.isDark());
+  // Neutral dark basemap: quiet greys so the three data colours stay the strongest marks
+  const DARK_MAP = [
+    { elementType: 'geometry', stylers: [{ color: '#1d2128' }] },
+    { elementType: 'labels.text.fill', stylers: [{ color: '#9aa3b2' }] },
+    { elementType: 'labels.text.stroke', stylers: [{ color: '#1d2128' }] },
+    { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#4b5563' }] },
+    { featureType: 'administrative.country', elementType: 'geometry.stroke', stylers: [{ color: '#7b8494' }, { weight: 1.2 }] },
+    { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#c3c9d4' }] },
+    { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+    { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#1f2a26' }] },
+    { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2b313b' }] },
+    { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#1a1e25' }] },
+    { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#8b93a1' }] },
+    { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#3a4150' }] },
+    { featureType: 'transit', elementType: 'geometry', stylers: [{ color: '#262c35' }] },
+    { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0f1a26' }] },
+    { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#4f5b6d' }] },
+  ];
   const POLAND_CENTER = { lat: 52.05, lng: 19.3 };
   const POLAND = { north: 54.85, south: 49.0, west: 14.1, east: 24.15 };
   // Fractional zoom lets Poland fill the map at every screen size
@@ -211,7 +230,7 @@
       scale: 5.5,
       fillColor: css(`--series-${slot}`),
       fillOpacity: 0.95,
-      strokeColor: '#ffffff',
+      strokeColor: css('--ring'),
       strokeWeight: 1.5,
     };
   }
@@ -228,10 +247,11 @@
       fullscreenControl: false,
       clickableIcons: false,
       gestureHandling: 'greedy',
+      styles: isDark() ? DARK_MAP : null,
     });
     showPoland();
     state.map.addListener('click', () => { if (isPhone() && panel.dataset.state === 'open') setSheet(false); });
-    const icons = { 1: markerIcon(1), 2: markerIcon(2), 3: markerIcon(3) };
+    let icons = { 1: markerIcon(1), 2: markerIcon(2), 3: markerIcon(3) };
     state.markers = state.events.map((e) => {
       const m = new google.maps.Marker({ position: { lat: e.lat, lng: e.lng }, icon: icons[TYPE_SLOT(e.type)], title: `${e.sub}, ${e.city}, ${e.date}`, optimized: true });
       m.__ev = e;
@@ -241,11 +261,11 @@
     const renderer = {
       render({ count, position }) {
         const size = count < 10 ? 30 : count < 100 ? 36 : count < 1000 ? 44 : 52;
-        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 2}" fill="#14213d" fill-opacity="0.88" stroke="#ffffff" stroke-width="2"/></svg>`;
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 2}" fill="${css('--cluster')}" fill-opacity="0.9" stroke="${css('--ring')}" stroke-width="2"/></svg>`;
         return new google.maps.Marker({
           position,
           icon: { url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg), anchor: new google.maps.Point(size / 2, size / 2) },
-          label: { text: count >= 1000 ? `${(count / 1000).toFixed(1)}k` : String(count), color: '#ffffff', fontSize: '12px', fontWeight: '600' },
+          label: { text: count >= 1000 ? `${(count / 1000).toFixed(1)}k` : String(count), color: css('--cluster-text'), fontSize: '12px', fontWeight: '600' },
           title: `${nf.format(count)} events – zoom in`,
           zIndex: 1000 + count,
         });
@@ -271,6 +291,14 @@
     state.clusterer = new markerClusterer.MarkerClusterer({ map: state.map, markers: [], renderer, algorithm, onClusterClick });
     updateMarkers();
     initPlaceSearch();
+
+    // Re-colour basemap, points and groups when the theme changes
+    document.addEventListener('cz-themechange', () => {
+      state.map.setOptions({ styles: isDark() ? DARK_MAP : null });
+      icons = { 1: markerIcon(1), 2: markerIcon(2), 3: markerIcon(3) };
+      state.markers.forEach((m) => m.setIcon(icons[TYPE_SLOT(m.__ev.type)]));
+      state.clusterer.render();
+    });
   }
 
   function updateMarkers(keep) {
@@ -488,7 +516,7 @@
     Chart.defaults.color = css('--text-2');
     Chart.defaults.borderColor = css('--grid');
     Chart.defaults.plugins.legend.display = false;
-    Chart.defaults.plugins.tooltip.backgroundColor = '#14213d';
+    Chart.defaults.plugins.tooltip.backgroundColor = css('--tooltip');
     Chart.defaults.plugins.tooltip.padding = 8;
     Chart.defaults.maintainAspectRatio = false;
     Chart.defaults.animation = false;
@@ -556,6 +584,13 @@
     barChart('c-subs', 'b-subs', subs.length > 8 ? [...subs.slice(0, 7), ['Other', subs.slice(7).reduce((s, e) => s + e[1], 0)]] : subs);
     barChart('c-cities', 'b-cities', countBy(v, 'city').slice(0, 10));
   }
+
+  document.addEventListener('cz-themechange', () => {
+    for (const [k, c] of Object.entries(state.charts)) if (c && c.destroy) c.destroy();
+    state.charts = {};
+    state.chartsDirty = true;
+    if (!$('view-insights').hidden) renderCharts();
+  });
 
   init();
 })();

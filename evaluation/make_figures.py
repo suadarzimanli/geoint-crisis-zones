@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Figures for the paper from data/city_month_counts.csv and results.json (run run_evaluation.py first)."""
+"""Figures for the paper from data/city_month_counts.csv and results.json (run run_evaluation.py first).
+
+  python make_figures.py                 # paper figures (PDF, light) -> ../paper/figures
+  python make_figures.py --dark DIR      # dark-background PNG versions, e.g. for a dark website
+"""
+import argparse
 import json
 from pathlib import Path
 
@@ -9,13 +14,23 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 HERE = Path(__file__).resolve().parent
-OUT = HERE.parent / "paper" / "figures"
+ap = argparse.ArgumentParser()
+ap.add_argument("--dark", type=Path, metavar="DIR", help="write dark-background PNGs to DIR instead")
+ARGS = ap.parse_args()
+DARK = ARGS.dark is not None
+OUT = ARGS.dark if DARK else HERE.parent / "paper" / "figures"
 OUT.mkdir(parents=True, exist_ok=True)
+EXT = ".png" if DARK else ".pdf"
 
-# Reference palette (light): series-1 blue, series-2 orange; neutral grey for context marks
-BLUE, ORANGE, GREY = "#2a78d6", "#eb6834", "#b9b8b3"
-INK, INK2, GRID = "#0b0b0b", "#52514e", "#e6e5e0"
+# Reference palette: series-1 blue, series-2 orange; neutral grey for context marks (light / dark steps)
+if DARK:
+    BLUE, ORANGE, GREY = "#3987e5", "#d95926", "#4a5260"
+    INK, INK2, GRID, BG = "#f0efec", "#c3c2b7", "#2a2f38", "#14171c"
+else:
+    BLUE, ORANGE, GREY = "#2a78d6", "#eb6834", "#b9b8b3"
+    INK, INK2, GRID, BG = "#0b0b0b", "#52514e", "#e6e5e0", "#ffffff"
 plt.rcParams.update({
+    "figure.facecolor": BG, "axes.facecolor": BG, "savefig.facecolor": BG, "text.color": INK,
     "font.family": "DejaVu Sans", "font.size": 9, "axes.edgecolor": INK2, "axes.labelcolor": INK2,
     "xtick.color": INK2, "ytick.color": INK2, "axes.spines.top": False, "axes.spines.right": False,
     "axes.grid": True, "grid.color": GRID, "grid.linewidth": 0.8, "axes.axisbelow": True,
@@ -43,7 +58,7 @@ ax.margins(x=0.01)
 import matplotlib.dates as mdates
 ax.xaxis.set_major_locator(mdates.YearLocator())
 ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
-fig.savefig(OUT / "fig-monthly.pdf")
+fig.savefig(OUT / ("fig-monthly" + EXT))
 plt.close(fig)
 
 # 2 RMSE by method, 12-month window (highlight the method shown in the app)
@@ -58,7 +73,7 @@ for i, v in enumerate(vals):
 ax.set_xlabel("RMSE (events per county-month), Dec 2023 – Nov 2024")
 ax.set_xlim(0, max(vals) * 1.12)
 ax.grid(axis="y", visible=False)
-fig.savefig(OUT / "fig-rmse.pdf")
+fig.savefig(OUT / ("fig-rmse" + EXT))
 plt.close(fig)
 
 # 3 Same methods, two evaluation designs (MAE)
@@ -77,7 +92,7 @@ ax.set_yticks(list(y), labels)
 ax.set_xlabel("MAE on county-months with events")
 ax.set_xlim(0, 3.0)
 ax.grid(axis="y", visible=False)
-ax.legend(frameon=False, loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=2, fontsize=8)
-fig.savefig(OUT / "fig-protocol.pdf")
+ax.legend(frameon=False, loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=2, fontsize=8, labelcolor=INK)
+fig.savefig(OUT / ("fig-protocol" + EXT))
 plt.close(fig)
 print("figures written to", OUT)

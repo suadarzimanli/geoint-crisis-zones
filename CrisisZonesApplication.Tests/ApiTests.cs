@@ -124,6 +124,19 @@ public sealed class ApiTests : IDisposable
         Assert.Contains("Event not found", await api.Content.ReadAsStringAsync());
     }
 
+    [Theory]
+    [InlineData("/")]
+    [InlineData("/about")]
+    [InlineData("/no-such-page")]
+    public async Task Every_page_offers_the_theme_switch(string url)
+    {
+        var c = Client(_file);
+        var html = await (await c.GetAsync(url)).Content.ReadAsStringAsync();
+        Assert.Contains("/js/theme.js", html);
+        Assert.Contains("id=\"theme-toggle\"", html);
+        Assert.Equal(HttpStatusCode.OK, (await c.GetAsync("/js/theme.js")).StatusCode);
+    }
+
     [Fact]
     public async Task Raw_data_file_is_not_served_as_a_static_file()
     {

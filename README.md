@@ -14,7 +14,7 @@ A web application for exploring **ACLED protest and political violence events in
 - **Insights.** Charts of the monthly trend, event types, sub-types and the most active counties. They follow the filters.
 - **Keyboard and no-map access.** "Read these events" opens the current selection (up to 2,000 events) one by one, newest first, without using the map.
 
-Desktop and phone layouts: on phones the map stays on screen and the panel becomes a bottom sheet.
+Desktop and phone layouts: on phones the map stays on screen and the panel becomes a bottom sheet. Light and dark themes: the app follows the system setting, and the button in the top bar switches and remembers the choice.
 
 ## Key results
 
@@ -89,10 +89,10 @@ dotnet test CrisisZonesApplication.Tests
 python -m unittest tools/test_fetch_acled.py
 ```
 
-25 .NET tests cover:
+28 .NET tests cover:
 - parsing and validation of event files (bad records are skipped and counted, not fatal);
 - the complete-month rule, the moving average and the backtest;
-- the API: compact list without narrative fields, case-insensitive lookups, a clear 503 when data are missing (never cached), security headers including the content security policy, no Maps key in the page when none is configured, raw data not served, and a friendly 404 page.
+- the API: compact list without narrative fields, case-insensitive lookups, a clear 503 when data are missing (never cached), security headers including the content security policy, no Maps key in the page when none is configured, raw data not served, a friendly 404 page, and the theme switch on every page.
 
 6 Python tests cover the download script: date formats (ISO and "13 December 2024"), invalid rows, period filtering and rejection of non-ACLED files.
 
