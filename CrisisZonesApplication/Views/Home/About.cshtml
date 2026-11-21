@@ -1,0 +1,67 @@
+@using CrisisZonesApplication.Services
+@inject EventStore Store
+@inject ForecastService Forecasts
+@{
+    ViewData["Title"] = "About & data";
+    var d = Store.Data;
+    var fc = Forecasts.Get();
+    string Month(string ym) => DateTime.ParseExact(ym + "-01", "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture).ToString("MMMM yyyy", System.Globalization.CultureInfo.GetCultureInfo("en-GB"));
+    string Day(DateOnly x) => x.ToString("d MMMM yyyy", System.Globalization.CultureInfo.GetCultureInfo("en-GB"));
+}
+<main id="main" class="page">
+    <h1>About Crisis Zones</h1>
+    <p class="lead">An interactive map of political violence and protest events recorded by ACLED in Poland, with a transparent next-month forecast for every county. Built as an independent research project.</p>
+
+    <h2>What you can do</h2>
+    <ul>
+        <li><strong>Explore</strong> — filter events by type, sub-type, voivodeship, county, period and the groups involved; select a point to read ACLED’s description of the event.</li>
+        <li><strong>Forecast</strong> — the expected number of events per county next month, with the months it is based on and how accurate the method has been.</li>
+        <li><strong>Insights</strong> — monthly trend, event types and the most active counties, all following your filters.</li>
+    </ul>
+
+    <h2 id="data">Data</h2>
+    @if (Store.IsAvailable)
+    {
+        <p>The app reads a local extract of the <a href="https://acleddata.com" target="_blank" rel="noopener">Armed Conflict Location &amp; Event Data (ACLED)</a> dataset for Poland:
+            <strong>@d.Events.Count.ToString("N0")</strong> events from @Day(d.FirstDate) to @Day(d.LastDate), in @d.Events.Select(e => e.Admin2).Distinct().Count() counties (ACLED <em>admin2</em>).
+            The extract reflects ACLED’s records as of @Day(d.ExtractDate); the last complete month is @Month(d.LastCompleteMonth.ToString("yyyy-MM")).</p>
+    }
+    else
+    {
+        <p class="callout">@Store.Error</p>
+    }
+    <p>Each record is a reported event with a date, place, type, actors, a short description and its sources. ACLED events in Poland are overwhelmingly peaceful protests; counts reflect what was <em>reported</em>, so places with more media and civil-society coverage may appear more active.</p>
+    <p class="callout"><strong>Attribution.</strong> Armed Conflict Location &amp; Event Data (ACLED); <a href="https://acleddata.com" target="_blank" rel="noopener">www.acleddata.com</a>. ACLED’s terms do not allow raw event data to be redistributed, so the source code repository contains only aggregated monthly counts; to run the app, download the events with your own ACLED account (see the README).</p>
+
+    <h2 id="method">Forecast method</h2>
+    <p>For each county the app counts events per calendar month (months without events count as zero) and predicts the next month as the <strong>average of the three latest complete months</strong>. A partly covered final month is shown separately and never used. The rule is deliberately simple: every forecast can be checked by hand from three numbers shown next to it.</p>
+    @if (fc is not null && fc.Backtest.Count > 0)
+    {
+        <p>Accuracy on the @fc.BacktestMonths months up to @Month(fc.LastCompleteMonth), predicting each county-month from the months before it:</p>
+        <div class="table-wrap">
+        <table>
+            <thead><tr><th>Method</th><th class="num">RMSE</th><th class="num">Mean absolute error</th></tr></thead>
+            <tbody>
+            @foreach (var s in fc.Backtest)
+            {
+                <tr><td>@s.Method</td><td class="num">@s.Rmse.ToString("0.00")</td><td class="num">@s.Mae.ToString("0.00")</td></tr>
+            }
+            </tbody>
+        </table>
+        </div>
+        <p>Errors are in events per county and month. Because most county-months have no events, a forecast of “always zero” has the lowest mean absolute error while missing every active month; the root-mean-square error (RMSE), which weighs large misses more, ranks the moving average first. The accompanying paper compares further methods, including a Random Forest, under the same protocol.</p>
+    }
+
+    <h2>Limitations</h2>
+    <ul>
+        <li>Forecasts extrapolate recent reporting; they do not anticipate new triggers such as elections or court rulings, and are not risk assessments.</li>
+        <li>Counties (ACLED <em>admin2</em>) are the unit; a large city and a rural county are treated the same way.</li>
+        <li>ACLED revises records over time; a new download can differ slightly from the extract used here.</li>
+    </ul>
+
+    <h2 id="privacy">Privacy</h2>
+    <p>The app has no accounts, sets no cookies and stores nothing about you. The map is provided by Google Maps, which receives your IP address and map requests under <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google’s privacy policy</a>. Place searches are sent to Google’s geocoding service. Event descriptions are ACLED’s published summaries of public events.</p>
+
+    <h2>Source code and citation</h2>
+    <p>Source code, evaluation scripts and the research paper: <a href="https://github.com/suadarzimanli/geoint-crisis-zones" target="_blank" rel="noopener">github.com/suadarzimanli/geoint-crisis-zones</a>. Independent research and teaching project; not affiliated with ACLED.</p>
+</main>

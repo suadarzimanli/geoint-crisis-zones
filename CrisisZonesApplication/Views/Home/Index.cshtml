@@ -1,0 +1,124 @@
+@inject IConfiguration Config
+@{
+    ViewData["Title"] = "Map";
+    ViewData["BodyClass"] = "page-map";
+    var mapsKey = Config["GoogleMaps:ApiKey"];
+}
+<main id="main" class="workspace">
+    <aside id="panel" class="panel" data-state="peek" aria-label="Explore, forecast and insights">
+        <button type="button" id="sheet-handle" class="sheet-handle" aria-controls="panel" aria-expanded="false">
+            <span class="sheet-grip" aria-hidden="true"></span><span class="visually-hidden">Expand panel</span>
+        </button>
+        <div class="tabs" role="tablist" aria-label="Panel views">
+            <button type="button" role="tab" id="tab-explore" aria-controls="view-explore" aria-selected="true">Explore</button>
+            <button type="button" role="tab" id="tab-forecast" aria-controls="view-forecast" aria-selected="false" tabindex="-1">Forecast</button>
+            <button type="button" role="tab" id="tab-insights" aria-controls="view-insights" aria-selected="false" tabindex="-1">Insights</button>
+        </div>
+        <p class="summary" id="summary" aria-live="polite">Loading events…</p>
+
+        <div class="views">
+            <section id="view-explore" role="tabpanel" aria-labelledby="tab-explore" class="view">
+                <form id="place-form" class="place-search" role="search" autocomplete="off">
+                    <label for="place-input" class="visually-hidden">Find a place</label>
+                    <input id="place-input" type="search" placeholder="Find a place in Poland" enterkeyhint="search" />
+                    <button type="submit" class="btn btn-icon" aria-label="Find place">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    </button>
+                </form>
+
+                <fieldset class="filters" id="filters" disabled>
+                    <legend class="section-title">Filter events</legend>
+                    <div class="field">
+                        <label for="f-type">Event type</label>
+                        <select id="f-type"><option value="">All event types</option></select>
+                    </div>
+                    <div class="field">
+                        <label for="f-sub">Sub-event type</label>
+                        <select id="f-sub"><option value="">All sub-event types</option></select>
+                    </div>
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="f-region">Voivodeship</label>
+                            <select id="f-region"><option value="">All voivodeships</option></select>
+                        </div>
+                        <div class="field">
+                            <label for="f-city">County / city</label>
+                            <select id="f-city"><option value="">All counties</option></select>
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="f-from">From</label>
+                            <select id="f-from"></select>
+                        </div>
+                        <div class="field">
+                            <label for="f-to">To</label>
+                            <select id="f-to"></select>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="f-interaction">Who was involved</label>
+                        <select id="f-interaction"><option value="">All interactions</option></select>
+                    </div>
+                    <div class="filter-actions">
+                        <label class="switch"><input type="checkbox" id="f-cluster" checked /> <span>Group nearby events</span></label>
+                        <button type="button" id="f-reset" class="btn btn-ghost">Reset filters</button>
+                    </div>
+                </fieldset>
+
+                <div class="legend" aria-label="Map legend">
+                    <span class="section-title">On the map</span>
+                    <ul>
+                        <li><span class="dot" style="--c:var(--series-1)"></span>Protests</li>
+                        <li><span class="dot" style="--c:var(--series-2)"></span>Riots</li>
+                        <li><span class="dot" style="--c:var(--series-3)"></span>Other event types</li>
+                        <li><span class="dot dot-cluster"></span>Group of events (number = events)</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="view-forecast" role="tabpanel" aria-labelledby="tab-forecast" class="view" hidden>
+                <div id="forecast-head" class="forecast-head"></div>
+                <div class="forecast-tools">
+                    <label for="fc-search" class="visually-hidden">Search counties</label>
+                    <input id="fc-search" type="search" placeholder="Search county" />
+                    <label for="fc-sort" class="visually-hidden">Sort</label>
+                    <select id="fc-sort">
+                        <option value="pred">Highest forecast</option>
+                        <option value="name">Name A–Z</option>
+                        <option value="total">Most events 2020–24</option>
+                    </select>
+                </div>
+                <label class="switch small"><input type="checkbox" id="fc-zero" /> <span>Include counties with a forecast of 0</span></label>
+                <ol id="forecast-list" class="forecast-list" aria-live="polite"></ol>
+                <p id="forecast-more" class="muted small" hidden></p>
+            </section>
+
+            <section id="view-insights" role="tabpanel" aria-labelledby="tab-insights" class="view" hidden>
+                <p class="muted small">Charts follow the filters in <em>Explore</em>.</p>
+                <figure class="chart-card"><figcaption><strong>Events per month</strong><span id="trend-note" class="muted small"></span></figcaption><div class="chart-box tall"><canvas id="c-trend" role="img" aria-label="Line chart of events per month"></canvas></div></figure>
+                <figure class="chart-card"><figcaption><strong>Event types</strong></figcaption><div class="chart-box" id="b-types"><canvas id="c-types" role="img" aria-label="Bar chart of events by type"></canvas></div></figure>
+                <figure class="chart-card"><figcaption><strong>Sub-event types</strong></figcaption><div class="chart-box" id="b-subs"><canvas id="c-subs" role="img" aria-label="Bar chart of events by sub-event type"></canvas></div></figure>
+                <figure class="chart-card"><figcaption><strong>Counties with most events</strong></figcaption><div class="chart-box" id="b-cities"><canvas id="c-cities" role="img" aria-label="Bar chart of the ten counties with most events"></canvas></div></figure>
+            </section>
+        </div>
+        <p class="attribution">Data: <a href="https://acleddata.com" target="_blank" rel="noopener">ACLED</a> · <a href="/about">About &amp; method</a></p>
+    </aside>
+
+    <div class="map-wrap">
+        <div id="map" class="map" role="region" aria-label="Map of events"></div>
+        <div id="map-message" class="map-message" hidden></div>
+        <article id="event-card" class="event-card" hidden aria-live="polite" aria-labelledby="ev-title">
+            <button type="button" class="btn-close" id="ev-close" aria-label="Close event details">×</button>
+            <div id="ev-body"></div>
+        </article>
+    </div>
+</main>
+
+<div id="data-config" hidden data-maps-key="@mapsKey"></div>
+
+@section Scripts {
+    <script src="~/lib/chartjs/chart.umd.min.js"></script>
+    <script src="~/lib/markerclusterer/index.min.js"></script>
+    <script src="~/js/app.js" asp-append-version="true"></script>
+}

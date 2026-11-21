@@ -1,0 +1,280 @@
+{
+  "data": {
+    "counties": 341,
+    "first_month": "2020-01",
+    "last_month": "2024-11",
+    "months": 59,
+    "county_months": 20119,
+    "events": 7756,
+    "share_zero": 0.8517321934489785
+  },
+  "windows": {
+    "12": {
+      "test_months": [
+        "2023-12",
+        "2024-11"
+      ],
+      "rows": 4092,
+      "active_rows": 619,
+      "scores": [
+        {
+          "method": "Always zero",
+          "mae": 0.4191104594330401,
+          "rmse": 1.8515930632688324,
+          "mae_active": 2.7705977382875604,
+          "deviance": null
+        },
+        {
+          "method": "Last month (naive)",
+          "mae": 0.4413489736070381,
+          "rmse": 1.4337776937424134,
+          "mae_active": 1.9321486268174475,
+          "deviance": 4.40242008493821
+        },
+        {
+          "method": "Same month last year",
+          "mae": 0.43426197458455523,
+          "rmse": 1.7256191601352837,
+          "mae_active": 2.2035541195476576,
+          "deviance": 7.257576148535174
+        },
+        {
+          "method": "Historical mean",
+          "mae": 0.5102880731816402,
+          "rmse": 1.5413385063867833,
+          "mae_active": 2.0560352645196254,
+          "deviance": 1.6411483249410277
+        },
+        {
+          "method": "3-month moving average",
+          "mae": 0.4833822091886608,
+          "rmse": 1.4256109839391558,
+          "mae_active": 1.9138395261173935,
+          "deviance": 3.6079270962867174
+        },
+        {
+          "method": "6-month moving average",
+          "mae": 0.5248859563375693,
+          "rmse": 1.523117094909331,
+          "mae_active": 1.9378029079159935,
+          "deviance": 3.3750321626242825
+        },
+        {
+          "method": "Poisson GLM (lags)",
+          "mae": 0.5115654249267688,
+          "rmse": 1.4622090133403904,
+          "mae_active": 2.001257169704328,
+          "deviance": 1.2088348313718997
+        },
+        {
+          "method": "Random Forest (lags + month)",
+          "mae": 0.5043538970610087,
+          "rmse": 1.3514388826712467,
+          "mae_active": 1.9154700164856404,
+          "deviance": 1.354071380159305
+        }
+      ],
+      "bootstrap": [
+        {
+          "a": "3-month moving average",
+          "b": "Random Forest (lags + month)",
+          "diff": 0.07417210126790907,
+          "ci95": [
+            -0.08249246244411174,
+            0.23351976708419758
+          ]
+        },
+        {
+          "a": "3-month moving average",
+          "b": "Last month (naive)",
+          "diff": -0.008166709803257621,
+          "ci95": [
+            -0.1780078842867353,
+            0.16910210868389047
+          ]
+        },
+        {
+          "a": "3-month moving average",
+          "b": "Poisson GLM (lags)",
+          "diff": -0.03659802940123469,
+          "ci95": [
+            -0.12934455632665098,
+            0.06944470404047288
+          ]
+        }
+      ],
+      "events_only_protocol": [
+        {
+          "method": "3-month moving average",
+          "mae": 2.4151857835218093,
+          "rmse": 3.8101367881327954
+        },
+        {
+          "method": "Last month (naive)",
+          "mae": 2.5993537964458806,
+          "rmse": 4.187642409509105
+        },
+        {
+          "method": "Random Forest (lags + month)",
+          "mae": 1.679759077079745,
+          "rmse": 3.6245941012344667
+        }
+      ],
+      "by_activity": [
+        {
+          "group": "<0.5",
+          "rows": 3566,
+          "3-month moving average": 0.9762079008947339,
+          "Random Forest (lags + month)": 0.9374770415094823,
+          "Last month (naive)": 1.0279329268367436
+        },
+        {
+          "group": "0.5-2",
+          "rows": 334,
+          "3-month moving average": 3.166535347629082,
+          "Random Forest (lags + month)": 2.8655363999174823,
+          "Last month (naive)": 2.9719245160907635
+        },
+        {
+          "group": ">2",
+          "rows": 192,
+          "3-month moving average": 2.8587503744999676,
+          "Random Forest (lags + month)": 2.884021914242064,
+          "Last month (naive)": 2.970339486770269
+        }
+      ]
+    },
+    "6": {
+      "test_months": [
+        "2024-06",
+        "2024-11"
+      ],
+      "rows": 2046,
+      "active_rows": 135,
+      "scores": [
+        {
+          "method": "Always zero",
+          "mae": 0.1603128054740958,
+          "rmse": 1.125115395406812,
+          "mae_active": 2.4296296296296296,
+          "deviance": null
+        },
+        {
+          "method": "Last month (naive)",
+          "mae": 0.15933528836754643,
+          "rmse": 0.7958838389136874,
+          "mae_active": 1.4370370370370371,
+          "deviance": 1.4355464077230335
+        },
+        {
+          "method": "Same month last year",
+          "mae": 0.20625610948191594,
+          "rmse": 1.1802380593900728,
+          "mae_active": 1.4148148148148147,
+          "deviance": 1.4053849001339895
+        },
+        {
+          "method": "Historical mean",
+          "mae": 0.3191469976823394,
+          "rmse": 0.7491651130799863,
+          "mae_active": 1.285500649531311,
+          "deviance": 0.5890182121164113
+        },
+        {
+          "method": "3-month moving average",
+          "mae": 0.20283479960899314,
+          "rmse": 0.7178540483059723,
+          "mae_active": 1.2222222222222223,
+          "deviance": 0.9354090533758159
+        },
+        {
+          "method": "6-month moving average",
+          "mae": 0.36534701857282503,
+          "rmse": 0.9722233859323668,
+          "mae_active": 1.1851851851851851,
+          "deviance": 0.9160418646212989
+        },
+        {
+          "method": "Poisson GLM (lags)",
+          "mae": 0.2981423933494138,
+          "rmse": 0.662486587781023,
+          "mae_active": 1.3003316945440158,
+          "deviance": 0.5828657752219655
+        },
+        {
+          "method": "Random Forest (lags + month)",
+          "mae": 0.3009023600446226,
+          "rmse": 0.7471915516123411,
+          "mae_active": 1.3035803260287016,
+          "deviance": 0.6150381687155737
+        }
+      ]
+    },
+    "24": {
+      "test_months": [
+        "2022-12",
+        "2024-11"
+      ],
+      "rows": 8184,
+      "active_rows": 1043,
+      "scores": [
+        {
+          "method": "Always zero",
+          "mae": 0.323435972629521,
+          "rmse": 1.5453790735409925,
+          "mae_active": 2.537871524448706,
+          "deviance": null
+        },
+        {
+          "method": "Last month (naive)",
+          "mae": 0.3374877810361681,
+          "rmse": 1.2161346069449668,
+          "mae_active": 1.7583892617449663,
+          "deviance": 3.5521443459088347
+        },
+        {
+          "method": "Same month last year",
+          "mae": 0.3936950146627566,
+          "rmse": 1.6681567141816753,
+          "mae_active": 2.13039309683605,
+          "deviance": 5.028979007795449
+        },
+        {
+          "method": "Historical mean",
+          "mae": 0.42725528004554647,
+          "rmse": 1.31228849179724,
+          "mae_active": 1.8607103482695673,
+          "deviance": 1.201191397895873
+        },
+        {
+          "method": "3-month moving average",
+          "mae": 0.3544314108830238,
+          "rmse": 1.1839019235253359,
+          "mae_active": 1.687120485778204,
+          "deviance": 2.751646834133253
+        },
+        {
+          "method": "6-month moving average",
+          "mae": 0.374633431085044,
+          "rmse": 1.2325599937348897,
+          "mae_active": 1.6743368488334933,
+          "deviance": 2.3479497785196366
+        },
+        {
+          "method": "Poisson GLM (lags)",
+          "mae": 0.4388299258439053,
+          "rmse": 1.19503016404427,
+          "mae_active": 1.7304640060836463,
+          "deviance": 0.9854899340286668
+        },
+        {
+          "method": "Random Forest (lags + month)",
+          "mae": 0.4202176344577127,
+          "rmse": 1.1695374945129904,
+          "mae_active": 1.7298268147803295,
+          "deviance": 1.087148706596958
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,12 @@
+﻿@model ErrorViewModel
+@{
+    ViewData["Title"] = "Error";
+}
+<main id="main" class="page">
+    <h1>Something went wrong</h1>
+    <p class="lead">The page could not be shown. Please go back to the <a href="/">map</a> and try again.</p>
+    @if (Model.ShowRequestId)
+    {
+        <p class="muted small">Reference: <code>@Model.RequestId</code></p>
+    }
+</main>

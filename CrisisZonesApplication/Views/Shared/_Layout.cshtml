@@ -1,0 +1,27 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="Crisis Zones: ACLED conflict and protest events in Poland, 2020–2024, on an interactive map with city-level forecasts." />
+    <meta name="theme-color" content="#14213d" />
+    <title>@(ViewData["Title"] is string t ? t + " · Crisis Zones" : "Crisis Zones")</title>
+    <link rel="icon" href="~/favicon.ico" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="@ViewData["BodyClass"]">
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="topbar">
+        <a class="brand" href="/" aria-label="Crisis Zones home">
+            <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/></svg>
+            <span class="brand-text"><strong>Crisis Zones</strong><span class="brand-sub">Poland · ACLED events 2020–2024</span></span>
+        </a>
+        <nav class="topnav" aria-label="Main">
+            <a href="/" class="@(ViewContext.RouteData.Values["action"] as string == "Index" ? "active" : null)">Map</a>
+            <a href="/about" class="@(ViewContext.RouteData.Values["action"] as string == "About" ? "active" : null)">About &amp; data</a>
+        </nav>
+    </header>
+    @RenderBody()
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

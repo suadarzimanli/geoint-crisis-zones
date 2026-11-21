@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+title: "Crisis Zones: Mapping and Forecasting ACLED Events in Poland"
+message: "If you use this software or analysis, please cite it as below."
+type: software
+authors:
+  - family-names: Arzimanli
+    given-names: Suad
+    affiliation: "University of Łódź"
+version: 1.0.0
+date-released: 2026-11-21
+license: MIT
+repository-code: "https://github.com/suadarzimanli/geoint-crisis-zones"
+keywords:
+  - geospatial intelligence
+  - ACLED
+  - conflict event data
+  - protest
+  - web GIS
+  - forecast evaluation
+  - Poland
+abstract: >-
+  Web application for exploring ACLED protest and political violence events
+  in Poland (2020-2024) from national overview to individual event, with a
+  transparent county-level next-month forecast, and an evaluation of eight
+  forecasting methods showing how evaluation design changes their ranking.
