@@ -12,6 +12,9 @@
     return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString('en-GB', { month: style, year: 'numeric', timeZone: 'UTC' });
   };
   const shortMonth = (ym) => monthName(ym, 'short').split(' ')[0];
+  // 'yyyy-MM-dd' is a calendar date: format in UTC so the viewer's timezone cannot shift it by a day
+  const dayName = (iso, opts = { day: 'numeric', month: 'short', year: 'numeric' }) =>
+    new Date(`${iso.slice(0, 10)}T00:00:00Z`).toLocaleDateString('en-GB', { ...opts, timeZone: 'UTC' });
   const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
   // Map colours: three slots (identity), see css --series-1..3
@@ -143,10 +146,13 @@
     state.visible = state.events.filter((_, i) => keep[i]);
     const total = state.events.length, n = state.visible.length;
     $('summary').innerHTML = n === total
-      ? `<strong>${nf.format(n)}</strong> events · ${esc(monthName(state.meta.firstDate.slice(0, 7), 'short'))} – ${esc(new Date(state.meta.lastDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }))}`
+      ? `<strong>${nf.format(n)}</strong> events · ${esc(monthName(state.meta.firstDate.slice(0, 7), 'short'))} – ${esc(dayName(state.meta.lastDate))}`
       : `<strong>${nf.format(n)}</strong> of ${nf.format(total)} events match the filters`;
     const active = Object.values(f).some(Boolean) || from !== F.from.dataset.default || to !== F.to.dataset.default;
     $('f-reset').disabled = !active;
+    const browse = $('f-browse');
+    browse.disabled = n === 0 || n > BROWSE_MAX;
+    browse.textContent = n === 0 ? 'No events to read' : n > BROWSE_MAX ? `Narrow the filters to read events (max ${nf.format(BROWSE_MAX)})` : `Read these ${nf.format(n)} events, newest first`;
     updateMarkers(keep);
     state.chartsDirty = true;
     if (!$('view-insights').hidden) renderCharts();
@@ -157,6 +163,13 @@
   F.city.addEventListener('change', () => { applyFilters(); fitToVisible(); });
   for (const s of [F.sub, F.from, F.to, F.interaction]) s.addEventListener('change', applyFilters);
   F.cluster.addEventListener('change', () => updateMarkers());
+  // Keyboard- and no-map access to the event records of the current selection
+  const BROWSE_MAX = 2000;
+  $('f-browse').addEventListener('click', () => {
+    if (!state.visible.length || state.visible.length > BROWSE_MAX) return;
+    openStack([...state.visible].sort(byDateDesc), 0, 'in this selection');
+    $('ev-close').focus();
+  });
   $('f-reset').addEventListener('click', () => {
     for (const s of [F.type, F.region, F.city, F.sub, F.interaction]) s.value = '';
     F.from.value = F.from.dataset.default; F.to.value = F.to.dataset.default;
@@ -217,6 +230,7 @@
       gestureHandling: 'greedy',
     });
     showPoland();
+    state.map.addListener('click', () => { if (isPhone() && panel.dataset.state === 'open') setSheet(false); });
     const icons = { 1: markerIcon(1), 2: markerIcon(2), 3: markerIcon(3) };
     state.markers = state.events.map((e) => {
       const m = new google.maps.Marker({ position: { lat: e.lat, lng: e.lng }, icon: icons[TYPE_SLOT(e.type)], title: `${e.sub}, ${e.city}, ${e.date}`, optimized: true });
@@ -246,7 +260,7 @@
       else map.fitBounds(cluster.bounds);
     };
     // The clustering index works on whole zoom levels; the map itself may sit between them
-    const base = new markerClusterer.SuperClusterAlgorithm({ radius: 80, maxZoom: 16 });
+    const base = new markerClusterer.SuperClusterAlgorithm({ radius: 80, maxZoom: 22 });
     const algorithm = {
       calculate(opts) {
         const m = opts.map;
@@ -301,12 +315,17 @@
           else { state.map.setCenter(r.geometry.location); state.map.setZoom(13); }
           if (isPhone()) setSheet(false);
         })
-        .catch(() => { $('summary').textContent = `No place found for “${q}” in Poland.`; });
+        .catch((err) => {
+          const denied = err && (err.code === 'REQUEST_DENIED' || /denied|not authorized/i.test(err.message || ''));
+          $('summary').textContent = denied
+            ? 'Place search is not enabled for this Maps key (it needs the Geocoding API).'
+            : `No place found for “${q}” in Poland.`;
+        });
     });
   }
 
   /* ---------------- Event details ---------------- */
-  const byDateDesc = (a, b) => b.date.localeCompare(a.date) || a.id.localeCompare(b.id);
+  function byDateDesc(a, b) { return b.date.localeCompare(a.date) || a.id.localeCompare(b.id); }
 
   // All visible events at the clicked event's exact position, newest first
   function openStackAt(ev) {
@@ -314,7 +333,8 @@
     openStack(list.length ? list : [ev], Math.max(0, list.findIndex((e) => e.id === ev.id)));
   }
 
-  function openStack(list, index) {
+  function openStack(list, index, label = 'at this place') {
+    state.stackLabel = label;
     state.stack = list;
     state.stackIndex = index;
     openEvent(list[index].id);
@@ -330,14 +350,14 @@
     try {
       const e = await getJson(`/api/events/${encodeURIComponent(id)}`);
       if (state.infoTarget !== id) return;
-      const date = new Date(e.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+      const date = dayName(e.date, { day: 'numeric', month: 'long', year: 'numeric' });
       const place = [e.location, e.admin3 && e.admin3 !== e.location ? e.admin3 : '', e.city, e.region].filter(Boolean);
       const actors = [e.actor1, e.assocActor1, e.actor2, e.assocActor2].filter(Boolean);
       const precise = { 1: 'exact place', 2: 'nearby area', 3: 'region only' }[e.geoPrecision] || '';
       const st = state.stack || [];
       const stackNav = st.length > 1
         ? `<div class="ev-stack"><button type="button" data-step="-1" aria-label="Newer event" ${state.stackIndex === 0 ? 'disabled' : ''}>‹</button>
-           <span>${nf.format(state.stackIndex + 1)} of ${nf.format(st.length)} events at this place</span>
+           <span>${nf.format(state.stackIndex + 1)} of ${nf.format(st.length)} events ${esc(state.stackLabel || 'at this place')}</span>
            <button type="button" data-step="1" aria-label="Older event" ${state.stackIndex === st.length - 1 ? 'disabled' : ''}>›</button></div>`
         : '';
       $('ev-body').innerHTML = `${stackNav}
@@ -362,7 +382,9 @@
   $('ev-close').addEventListener('click', () => {
     $('event-card').hidden = true;
     document.querySelector('.map-wrap').classList.remove('card-open');
-    state.infoTarget = null; state.stack = null;
+    const wasBrowsing = state.stackLabel === 'in this selection';
+    state.infoTarget = null; state.stack = null; state.stackLabel = null;
+    if (wasBrowsing) $('f-browse').focus();
   });
   $('ev-body').addEventListener('click', (e) => {
     const b = e.target.closest('[data-step]');
@@ -388,7 +410,7 @@
     const basis = fc.basisMonths;
     const ma = fc.backtest[0], naive = fc.backtest[1], zero = fc.backtest[2];
     const partial = fc.partialUntil
-      ? `<p class="note">ACLED had recorded events up to ${esc(new Date(fc.partialUntil).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }))} when the data were downloaded. Those are shown as <em>so far</em> and are not used by the forecast.</p>`
+      ? `<p class="note">ACLED had recorded events up to ${esc(dayName(fc.partialUntil, { day: 'numeric', month: 'long' }))} when the data were downloaded. Those are shown as <em>so far</em> and are not used by the forecast.</p>`
       : '';
     $('forecast-head').innerHTML = `
       <p class="kicker">Forecast for</p>
@@ -507,7 +529,7 @@
     v.forEach((e) => { const k = e.date.slice(0, 7); if (per.has(k)) per.set(k, per.get(k) + 1); });
     const last = state.meta.lastDate.slice(0, 7);
     const partial = months.includes(last) && state.meta.lastCompleteMonth < last;
-    $('trend-note').textContent = partial ? `${monthName(last, 'short')} is incomplete (data to ${new Date(state.meta.lastDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}).` : '';
+    $('trend-note').textContent = partial ? `${monthName(last, 'short')} is incomplete (data to ${dayName(state.meta.lastDate, { day: 'numeric', month: 'short' })}).` : '';
     const trend = {
       labels: months.map((m) => monthName(m, 'short')),
       datasets: [{

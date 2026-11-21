@@ -34,10 +34,10 @@ public sealed class EventsController : ControllerBase
     /// (notes, actors, sources) are only returned per event by <see cref="Event"/>.
     /// </summary>
     [HttpGet("events")]
-    [ResponseCache(Duration = 300)]
     public IActionResult Events()
     {
         if (!_store.IsAvailable) return Unavailable();
+        CacheFor5Minutes();   // successful responses only; an error must not be cached
         return Ok(_store.Data.Events.Select(e => new
         {
             id = e.Id,
@@ -88,6 +88,8 @@ public sealed class EventsController : ControllerBase
             notes = e.Notes,
         });
     }
+
+    private void CacheFor5Minutes() => Response.Headers.CacheControl = "public,max-age=300";
 
     private ObjectResult Unavailable() =>
         StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = _store.Error });

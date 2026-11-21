@@ -10,6 +10,7 @@ A web application for exploring **ACLED protest and political violence events in
 - **Every event at a place.** ACLED geocodes most events to a town or district centre: 95.5% of events share their coordinates with others, and one point in Warsaw holds 1,132. Selecting a place opens *all* its events, newest first, with ACLED's note, actors and source.
 - **Forecast.** The expected number of events per county next month, computed as the average of the three latest complete months. Each value is shown with those three months, a 12-month sparkline and the events already recorded. The method's accuracy is listed next to naive and always-zero baselines.
 - **Insights.** Charts of the monthly trend, event types, sub-types and the most active counties. They follow the filters.
+- **Keyboard and no-map access.** "Read these events" opens the current selection (up to 2,000 events) one by one, newest first, without using the map.
 
 Desktop and phone layouts: on phones the map stays on screen and the panel becomes a bottom sheet.
 
@@ -83,12 +84,15 @@ The backtest shown in the app is computed by the server from the same events and
 
 ```bash
 dotnet test CrisisZonesApplication.Tests
+python -m unittest tools/test_fetch_acled.py
 ```
 
-23 tests cover:
+25 .NET tests cover:
 - parsing and validation of event files (bad records are skipped and counted, not fatal);
 - the complete-month rule, the moving average and the backtest;
-- the API: compact list without narrative fields, case-insensitive lookups, a clear 503 when data are missing, security headers, no Maps key in the page when none is configured, and raw data not served.
+- the API: compact list without narrative fields, case-insensitive lookups, a clear 503 when data are missing (never cached), security headers including the content security policy, no Maps key in the page when none is configured, raw data not served, and a friendly 404 page.
+
+6 Python tests cover the download script: date formats (ISO and "13 December 2024"), invalid rows, period filtering and rejection of non-ACLED files.
 
 ## Project layout
 
@@ -107,6 +111,7 @@ paper/                         research paper (LaTeX + PDF)
 
 - **Nothing about users is stored.** No accounts and no cookies. Google Maps and place search are provided by Google.
 - **Safe display of data.** All text from the data is inserted as text, never as HTML.
+- **Content security policy.** Scripts may only come from this site and Google Maps; no plugins, no framing.
 - **Narrative fields on demand.** Notes, actors and sources are only sent for the event being viewed.
 - **No secrets in the repository.** The Maps key lives in a git-ignored local file.
 

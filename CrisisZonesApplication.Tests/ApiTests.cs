@@ -84,14 +84,44 @@ public sealed class ApiTests : IDisposable
     }
 
     [Fact]
+    public async Task Only_successful_data_responses_are_cacheable()
+    {
+        var ok = await Client(_file).GetAsync("/api/events");
+        Assert.Contains("max-age=300", ok.Headers.CacheControl!.ToString());
+        var missing = Client(Path.Combine(Path.GetTempPath(), "does-not-exist.geojson"));
+        foreach (var url in new[] { "/api/events", "/api/forecast" })
+        {
+            var r = await missing.GetAsync(url);
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, r.StatusCode);
+            Assert.False(r.Headers.CacheControl?.MaxAge > TimeSpan.Zero, $"{url} error response must not be cached");
+        }
+    }
+
+    [Fact]
     public async Task Pages_send_security_headers_and_no_maps_key_when_unset()
     {
         var r = await Client(_file).GetAsync("/");
         Assert.Equal("nosniff", r.Headers.GetValues("X-Content-Type-Options").Single());
         Assert.Equal("DENY", r.Headers.GetValues("X-Frame-Options").Single());
+        var csp = r.Headers.GetValues("Content-Security-Policy").Single();
+        Assert.Contains("script-src 'self' https://maps.googleapis.com", csp);
+        Assert.Contains("object-src 'none'", csp);
+        Assert.DoesNotContain("unsafe-eval", csp);
         var html = await r.Content.ReadAsStringAsync();
         Assert.Contains("data-maps-key=\"\"", html);
         Assert.DoesNotContain("AIza", html);
+    }
+
+    [Fact]
+    public async Task Unknown_pages_get_a_friendly_404_but_api_stays_json()
+    {
+        var c = Client(_file);
+        var page = await c.GetAsync("/no-such-page");
+        Assert.Equal(HttpStatusCode.NotFound, page.StatusCode);
+        Assert.Contains("Page not found", await page.Content.ReadAsStringAsync());
+        var api = await c.GetAsync("/api/events/NOPE");
+        Assert.Equal(HttpStatusCode.NotFound, api.StatusCode);
+        Assert.Contains("Event not found", await api.Content.ReadAsStringAsync());
     }
 
     [Fact]

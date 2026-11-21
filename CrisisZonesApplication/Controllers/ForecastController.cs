@@ -1,4 +1,4 @@
-﻿using CrisisZonesApplication.Services;
+using CrisisZonesApplication.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CrisisZonesApplication.Controllers;
@@ -18,13 +18,12 @@ public sealed class ForecastController : ControllerBase
 
     /// <summary>Next-month forecast for every city, highest first, with the backtest of the method.</summary>
     [HttpGet]
-    [ResponseCache(Duration = 300)]
     public IActionResult Get()
     {
         var result = _forecasts.Get();
-        return result is null
-            ? StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = _store.Error })
-            : Ok(result);
+        if (result is null) return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = _store.Error });
+        Response.Headers.CacheControl = "public,max-age=300";   // successful responses only
+        return Ok(result);
     }
 
     /// <summary>Forecast for one city (case-insensitive name).</summary>
