@@ -17,7 +17,7 @@
     new Date(`${iso.slice(0, 10)}T00:00:00Z`).toLocaleDateString('en-GB', { ...opts, timeZone: 'UTC' });
   const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
-  // Map colours: three slots (identity), see css --series-1..3
+  // Map colours: three slots (identity), see css --map-series-1..3 (the map stays light in both themes)
   const TYPE_SLOT = (type) => (type === 'Protests' ? 1 : type === 'Riots' ? 2 : 3);
 
   const state = {
@@ -212,25 +212,6 @@
     document.head.appendChild(s);
   }
 
-  const isDark = () => !!(window.CrisisZonesTheme && window.CrisisZonesTheme.isDark());
-  // Neutral dark basemap: quiet greys so the three data colours stay the strongest marks
-  const DARK_MAP = [
-    { elementType: 'geometry', stylers: [{ color: '#1d2128' }] },
-    { elementType: 'labels.text.fill', stylers: [{ color: '#9aa3b2' }] },
-    { elementType: 'labels.text.stroke', stylers: [{ color: '#1d2128' }] },
-    { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#4b5563' }] },
-    { featureType: 'administrative.country', elementType: 'geometry.stroke', stylers: [{ color: '#7b8494' }, { weight: 1.2 }] },
-    { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#c3c9d4' }] },
-    { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-    { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#1f2a26' }] },
-    { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2b313b' }] },
-    { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#1a1e25' }] },
-    { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#8b93a1' }] },
-    { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#3a4150' }] },
-    { featureType: 'transit', elementType: 'geometry', stylers: [{ color: '#262c35' }] },
-    { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0f1a26' }] },
-    { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#4f5b6d' }] },
-  ];
   const POLAND_CENTER = { lat: 52.05, lng: 19.3 };
   const POLAND = { north: 54.85, south: 49.0, west: 14.1, east: 24.15 };
   // Fractional zoom lets Poland fill the map at every screen size
@@ -242,9 +223,9 @@
     return {
       path: google.maps.SymbolPath.CIRCLE,
       scale: 5.5,
-      fillColor: css(`--series-${slot}`),
+      fillColor: css(`--map-series-${slot}`),
       fillOpacity: 0.95,
-      strokeColor: css('--ring'),
+      strokeColor: css('--map-ring'),
       strokeWeight: 1.5,
     };
   }
@@ -261,11 +242,10 @@
       fullscreenControl: false,
       clickableIcons: false,
       gestureHandling: 'greedy',
-      styles: isDark() ? DARK_MAP : null,
     });
     showPoland();
     state.map.addListener('click', () => { if (isPhone() && panel.dataset.state === 'open') setSheet(false); });
-    let icons = { 1: markerIcon(1), 2: markerIcon(2), 3: markerIcon(3) };
+    const icons = { 1: markerIcon(1), 2: markerIcon(2), 3: markerIcon(3) };
     state.markers = state.events.map((e) => {
       const m = new google.maps.Marker({ position: { lat: e.lat, lng: e.lng }, icon: icons[TYPE_SLOT(e.type)], title: `${e.sub}, ${e.city}, ${e.date}`, optimized: true });
       m.__ev = e;
@@ -275,11 +255,11 @@
     const renderer = {
       render({ count, position }) {
         const size = count < 10 ? 30 : count < 100 ? 36 : count < 1000 ? 44 : 52;
-        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 2}" fill="${css('--cluster')}" fill-opacity="0.9" stroke="${css('--ring')}" stroke-width="2"/></svg>`;
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 2}" fill="${css('--map-cluster')}" fill-opacity="0.9" stroke="${css('--map-ring')}" stroke-width="2"/></svg>`;
         return new google.maps.Marker({
           position,
           icon: { url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg), anchor: new google.maps.Point(size / 2, size / 2) },
-          label: { text: count >= 1000 ? `${(count / 1000).toFixed(1)}k` : String(count), color: css('--cluster-text'), fontSize: '12px', fontWeight: '600' },
+          label: { text: count >= 1000 ? `${(count / 1000).toFixed(1)}k` : String(count), color: css('--map-cluster-text'), fontSize: '12px', fontWeight: '600' },
           title: `${nf.format(count)} events – zoom in`,
           zIndex: 1000 + count,
         });
@@ -306,13 +286,6 @@
     updateMarkers();
     initPlaceSearch();
 
-    // Re-colour basemap, points and groups when the theme changes
-    document.addEventListener('cz-themechange', () => {
-      state.map.setOptions({ styles: isDark() ? DARK_MAP : null });
-      icons = { 1: markerIcon(1), 2: markerIcon(2), 3: markerIcon(3) };
-      state.markers.forEach((m) => m.setIcon(icons[TYPE_SLOT(m.__ev.type)]));
-      state.clusterer.render();
-    });
   }
 
   function updateMarkers(keep) {
@@ -403,7 +376,7 @@
            <button type="button" data-step="1" aria-label="Older event" ${state.stackIndex === st.length - 1 ? 'disabled' : ''}>›</button></div>`
         : '';
       $('ev-body').innerHTML = `${stackNav}
-        <p class="ev-kicker"><span class="dot" style="--c:var(--series-${TYPE_SLOT(e.type)})"></span>${esc(e.type)}</p>
+        <p class="ev-kicker"><span class="dot" style="--c:var(--map-series-${TYPE_SLOT(e.type)})"></span>${esc(e.type)}</p>
         <h2 id="ev-title">${esc(e.sub)}</h2>
         <p class="ev-meta">${esc(date)} · ${esc(place.join(', '))}</p>
         ${e.notes ? `<p class="ev-notes">${esc(e.notes)}</p>` : ''}

@@ -19,12 +19,17 @@
   --series-3: #1baf7a;
   --card: #ffffff;
   --line-strong: #c9c8c2;
-  --cluster: #14213d;          /* groups of events on the map */
-  --cluster-text: #ffffff;
   --ring: #ffffff;             /* outline around map points and legend dots */
   --note-bg: #fff8e6;
   --note-line: #f1dfae;
   --map-bg: #e8eef2;
+  /* The map keeps its light basemap in both themes, so its marks keep the light-surface colours */
+  --map-series-1: #2a78d6;
+  --map-series-2: #eb6834;
+  --map-series-3: #1baf7a;
+  --map-cluster: #14213d;
+  --map-cluster-text: #ffffff;
+  --map-ring: #ffffff;
   --grip: #cfcec8;
   --tooltip: #14213d;
   --radius: 10px;
@@ -53,12 +58,9 @@
   --series-1: #3987e5;
   --series-2: #d95926;
   --series-3: #199e70;
-  --cluster: #e6ecf5;
-  --cluster-text: #0b1120;
   --ring: #1b1f26;
   --note-bg: #2a2516;
   --note-line: #5a4a1c;
-  --map-bg: #1d2128;
   --grip: #4a5260;
   --tooltip: #000000;
   --shadow: 0 1px 2px rgb(0 0 0 / .4), 0 8px 24px rgb(0 0 0 / .45);
@@ -82,12 +84,9 @@
     --series-1: #3987e5;
     --series-2: #d95926;
     --series-3: #199e70;
-    --cluster: #e6ecf5;
-    --cluster-text: #0b1120;
     --ring: #1b1f26;
     --note-bg: #2a2516;
     --note-line: #5a4a1c;
-    --map-bg: #1d2128;
     --grip: #4a5260;
     --tooltip: #000000;
     --shadow: 0 1px 2px rgb(0 0 0 / .4), 0 8px 24px rgb(0 0 0 / .45);
@@ -200,7 +199,7 @@ input[type="search"]:focus, select:focus { border-color: var(--accent); }
 .legend ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 14px; }
 .legend li { display: flex; align-items: center; gap: 8px; }
 .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 1.5px var(--ring), 0 0 0 2.5px rgb(127 127 127 / .25); flex: none; display: inline-block; }
-.dot-cluster { width: 16px; height: 16px; background: var(--cluster); }
+.dot-cluster { width: 16px; height: 16px; background: var(--map-cluster); box-shadow: 0 0 0 2px var(--map-ring), 0 0 0 3px rgb(127 127 127 / .35); }  /* drawn as on the map */
 
 /* Forecast */
 .forecast-head .kicker { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); }

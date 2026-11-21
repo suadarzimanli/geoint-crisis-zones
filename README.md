@@ -14,7 +14,7 @@ A web application for exploring **ACLED protest and political violence events in
 - **Insights.** Charts of the monthly trend, event types, sub-types and the most active counties. They follow the filters.
 - **Keyboard and no-map access.** "Read these events" opens the current selection (up to 2,000 events) one by one, newest first, without using the map.
 
-Desktop and phone layouts: on phones the map stays on screen and the panel becomes a bottom sheet. Light and dark themes: the app follows the system setting, and the button in the top bar switches and remembers the choice.
+Desktop and phone layouts: on phones the map stays on screen and the panel becomes a bottom sheet. Light and dark themes: the app follows the system setting, and the button in the top bar switches and remembers the choice. The map itself stays light in both themes.
 
 ## Key results
 
