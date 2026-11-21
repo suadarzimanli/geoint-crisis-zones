@@ -1,5 +1,7 @@
 # Crisis Zones
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24417729.svg)](https://doi.org/10.5281/zenodo.24417729)
+
 A web application for exploring **ACLED protest and political violence events in Poland (2020–2024)**: from the national overview down to the record of a single event, with a transparent next-month forecast for every county. The repository also contains the forecast evaluation and the research paper.
 
 > **Disclaimer.** Independent research and teaching project, not affiliated with ACLED. The app shows *reported* events; its forecasts are expectations from recent counts, not risk assessments.
