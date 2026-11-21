@@ -1,4 +1,4 @@
-﻿namespace CrisisZonesApplication.Models;
+namespace CrisisZonesApplication.Models;
 
 /// <summary>One ACLED event as loaded from the local GeoJSON extract.</summary>
 public sealed record ConflictEvent
@@ -28,4 +28,12 @@ public sealed record ConflictEvent
     public int TimePrecision { get; init; }
     /// <summary>Unix seconds of ACLED's last update of the record (0 if absent).</summary>
     public long Timestamp { get; init; }
+
+    /// <summary>
+    /// Identifies a county. County names are not unique in Poland (e.g. powiat Tomaszowski exists in
+    /// Lubelskie and in Łódzkie), so a county is the pair (voivodeship, county).
+    /// </summary>
+    public string CountyKey => CountyKeyOf(Admin1, Admin2);
+
+    public static string CountyKeyOf(string admin1, string admin2) => admin1 + "|" + admin2;
 }

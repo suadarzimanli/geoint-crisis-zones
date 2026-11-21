@@ -4,6 +4,8 @@ Forecast evaluation for Crisis Zones: monthly ACLED event counts per Polish coun
 
 Input   data/city_month_counts.csv – one row per county and complete calendar month,
         months without events included as 0 (derived, aggregated data; no raw ACLED records).
+        A county is (region = voivodeship, city = county): ten county names occur in two
+        voivodeships each, so the name alone does not identify a county.
         Re-create it from a local ACLED extract with:  python run_evaluation.py --from-geojson PATH
 Output  results.md, results.json
 
@@ -46,28 +48,35 @@ def counts_from_geojson(path: Path) -> pd.DataFrame:
         date = str(p.get("event_date") or "")[:10]
         if len(date) != 10:
             continue
-        city = p.get("admin2") or p.get("admin1") or "Unknown"
-        rows.append((city, date[:7]))
+        region = p.get("admin1") or "Unknown"
+        city = p.get("admin2") or region
+        rows.append((region, city, date[:7]))
         try:
             max_ts = max(max_ts, int(p.get("timestamp") or 0))
         except (TypeError, ValueError):
             pass
-    ev = pd.DataFrame(rows, columns=["city", "ym"])
-    last_date = max(r[1] for r in rows)
-    extract = pd.Timestamp(max_ts, unit="s") if max_ts else pd.Timestamp(last_date + "-01") + pd.offsets.MonthEnd(0)
-    last_complete = extract.to_period("M") if extract.is_month_end else extract.to_period("M") - 1
+    ev = pd.DataFrame(rows, columns=["region", "city", "ym"])
+    last_month = pd.Period(max(r[2] for r in rows), "M")
+    extract = pd.Timestamp(max_ts, unit="s") if max_ts else (last_month + 1).to_timestamp()
+    by_extract = extract.to_period("M") if extract.is_month_end else extract.to_period("M") - 1
+    # ACLED timestamps record the last revision: a later download must not add empty months
+    # after the last event, so a month is complete only up to the month of the last event.
+    last_complete = min(by_extract, last_month)
     months = pd.period_range(ev.ym.min(), last_complete, freq="M").strftime("%Y-%m")
-    grid = ev[ev.ym.isin(months)].groupby(["city", "ym"]).size().unstack(fill_value=0)
-    grid = grid.reindex(index=sorted(ev.city.unique()), columns=months, fill_value=0)
-    grid.index.name, grid.columns.name = "city", "ym"
+    counties = pd.MultiIndex.from_frame(ev[["region", "city"]].drop_duplicates().sort_values(["region", "city"]))
+    grid = ev[ev.ym.isin(months)].groupby(["region", "city", "ym"]).size().unstack(fill_value=0)
+    grid = grid.reindex(index=counties, columns=months, fill_value=0)
+    grid.columns.name = "ym"
     out = grid.stack().rename("event_count").reset_index()
     out["year"] = out.ym.str[:4].astype(int)
     out["month"] = out.ym.str[5:].astype(int)
-    return out[["city", "year", "month", "event_count"]]
+    return out[["region", "city", "year", "month", "event_count"]]
 
 
 def load_counts() -> pd.DataFrame:
     df = pd.read_csv(COUNTS)
+    if "region" in df.columns:            # county = voivodeship + county name
+        df["city"] = df.region + "|" + df.city
     df["ym"] = df.year.astype(str) + "-" + df.month.astype(str).str.zfill(2)
     return df.sort_values(["city", "ym"]).reset_index(drop=True)
 

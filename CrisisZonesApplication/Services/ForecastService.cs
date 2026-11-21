@@ -1,8 +1,9 @@
-﻿using CrisisZonesApplication.Models;
+using CrisisZonesApplication.Models;
 
 namespace CrisisZonesApplication.Services;
 
 public sealed record CityForecast(
+    string Key,                                     // voivodeship|county (county names repeat across voivodeships)
     string City,
     string Region,
     double Predicted,
@@ -64,14 +65,14 @@ public sealed class ForecastService
         return list;
     }
 
-    /// <summary>City → monthly counts aligned to <paramref name="months"/> (zeros included).</summary>
+    /// <summary>County key (voivodeship|county) → monthly counts aligned to <paramref name="months"/> (zeros included).</summary>
     public static Dictionary<string, int[]> MonthlyCounts(IEnumerable<ConflictEvent> events, IReadOnlyList<DateOnly> months)
     {
         var index = months.Select((m, i) => (m, i)).ToDictionary(t => t.m, t => t.i);
         var counts = new Dictionary<string, int[]>(StringComparer.Ordinal);
         foreach (var e in events)
         {
-            if (!counts.TryGetValue(e.Admin2, out var row)) counts[e.Admin2] = row = new int[months.Count];
+            if (!counts.TryGetValue(e.CountyKey, out var row)) counts[e.CountyKey] = row = new int[months.Count];
             if (index.TryGetValue(new DateOnly(e.Date.Year, e.Date.Month, 1), out var i)) row[i]++;
         }
         return counts;
@@ -117,18 +118,19 @@ public sealed class ForecastService
         var basisStart = months.Count >= Window ? months.Count - Window : 0;
         var basisMonths = months.Skip(basisStart).ToList();
 
-        var byCity = data.Events.GroupBy(e => e.Admin2, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.ToList());
+        var byCounty = data.Events.GroupBy(e => e.CountyKey, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.ToList());
         var cities = new List<CityForecast>();
-        foreach (var (city, all) in byCity)
+        foreach (var (key, all) in byCounty)
         {
-            var series = counts.TryGetValue(city, out var s) ? s : new int[months.Count];
-            var region = all.GroupBy(e => e.Admin1).OrderByDescending(g => g.Count()).First().Key;
+            var series = counts.TryGetValue(key, out var s) ? s : new int[months.Count];
+            var city = all[0].Admin2;
+            var region = all[0].Admin1;
             var basisFrom = basisMonths.Count > 0 ? basisMonths[0] : target;
             var subTypes = all.Where(e => e.Date >= basisFrom && e.Date < target)
                               .GroupBy(e => e.SubEventType)
                               .ToDictionary(g => g.Key, g => Math.Round(g.Count() / (double)Math.Max(1, basisMonths.Count), 2));
             cities.Add(new CityForecast(
-                city, region,
+                key, city, region,
                 Math.Round(MovingAverage(series), 2),
                 series.Skip(basisStart).ToArray(),
                 series.Skip(Math.Max(0, series.Length - 12)).ToArray(),

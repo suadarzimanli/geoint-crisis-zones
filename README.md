@@ -18,19 +18,19 @@ Desktop and phone layouts: on phones the map stays on screen and the panel becom
 
 ## Key results
 
-These come from the paper (`paper/geoint-crisis-zones.pdf`). Next-month forecasts per county were tested on December 2023 to November 2024 (4,092 county-months). Each month is predicted only from earlier months, and every method sees the same history.
+These come from the paper (`paper/geoint-crisis-zones.pdf`). Next-month forecasts per county were tested on December 2023 to November 2024 (4,212 county-months). Each month is predicted only from earlier months, and every method sees the same history.
 
 | Method | RMSE | MAE |
 |---|---:|---:|
-| Random Forest (lags + month) | 1.351 | 0.504 |
-| **3-month moving average (shown in the app)** | **1.426** | **0.483** |
-| Last month (naive) | 1.434 | 0.441 |
-| Poisson GLM (lags) | 1.462 | 0.512 |
-| Always zero | 1.852 | 0.419 |
+| Random Forest (lags + month) | 1.336 | 0.492 |
+| **3-month moving average (shown in the app)** | **1.409** | **0.472** |
+| Last month (naive) | 1.419 | 0.433 |
+| Poisson GLM (lags) | 1.449 | 0.500 |
+| Always zero | 1.823 | 0.407 |
 
 - **No significant winner.** The RMSE difference between the moving average and the Random Forest is +0.07, and its 95% county-bootstrap interval (−0.08 to +0.23) includes zero. On a 6-month window the moving average beats the Random Forest.
-- **Use RMSE, not MAE.** MAE rewards predicting no activity, because 85% of county-months have no events.
-- **The evaluation design matters more than the method.** If months without events are dropped and the methods get different information, the same Random Forest looks 30% better than the moving average. When every method sees the same history, their errors on months with events are equal.
+- **Use RMSE, not MAE.** MAE rewards predicting no activity, because 85.5% of county-months have no events.
+- **The evaluation design matters more than the method.** If months without events are dropped and the methods get different information, the same Random Forest looks 29% better than the moving average. When every method sees the same history, their errors on months with events differ by less than 0.03.
 
 ## Run it
 
@@ -69,7 +69,7 @@ The app treats a month as complete only if the extract was taken on or after its
 
 ## Evaluation (reproducible without raw data)
 
-`evaluation/data/city_month_counts.csv` holds the aggregated counts used in the paper: 341 counties × 59 complete months, with zero months included. They are derived counts that cannot be turned back into events.
+`evaluation/data/city_month_counts.csv` holds the aggregated counts used in the paper: 351 counties × 59 complete months, with zero months included. A county is the pair voivodeship + county name, because ten county names occur in two voivodeships. They are derived counts that cannot be turned back into events.
 
 ```bash
 cd evaluation

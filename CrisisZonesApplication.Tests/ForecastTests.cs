@@ -19,7 +19,7 @@ public class ForecastTests
         var d = Parse(Collection(
             Feature("1", "2024-01-03", "A"), Feature("2", "2024-01-20", "A"), Feature("3", "2024-03-09", "A")));
         var months = ForecastService.MonthRange(new DateOnly(2024, 1, 1), new DateOnly(2024, 3, 1));
-        Assert.Equal(new[] { 2, 0, 1 }, ForecastService.MonthlyCounts(d.Events, months)["A"]);
+        Assert.Equal(new[] { 2, 0, 1 }, ForecastService.MonthlyCounts(d.Events, months)["Mazowieckie|A"]);
     }
 
     [Fact]
@@ -48,6 +48,38 @@ public class ForecastTests
         Assert.Equal(0.33, b.Predicted);
         Assert.Equal(0.33, b.PredictedSubTypes["Mob violence"]);
         Assert.Equal(0.0, b.ProtestShare);
+    }
+
+    [Fact]
+    public void Counties_with_the_same_name_in_different_voivodeships_stay_separate()
+    {
+        var lubelskie = new Dictionary<string, object?> { ["admin1"] = "Lubelskie" };
+        var lodzkie = new Dictionary<string, object?> { ["admin1"] = "Lodzkie" };
+        var d = Parse(Collection(
+            Feature("1", "2024-09-02", "Tomaszowski", extra: lubelskie), Feature("2", "2024-10-02", "Tomaszowski", extra: lubelskie),
+            Feature("3", "2024-11-02", "Tomaszowski", extra: lubelskie),
+            Feature("4", "2024-11-03", "Tomaszowski", extra: lodzkie, timestamp: Unix(2024, 12, 17))));
+        var r = ForecastService.Compute(d);
+        Assert.Equal(2, r.Cities.Count(c => c.City == "Tomaszowski"));
+        var lub = r.Cities.Single(c => c.Region == "Lubelskie");
+        var lod = r.Cities.Single(c => c.Region == "Lodzkie");
+        Assert.Equal(new[] { 1, 1, 1 }, lub.Basis);
+        Assert.Equal(new[] { 0, 0, 1 }, lod.Basis);
+        Assert.Equal("Lodzkie|Tomaszowski", lod.Key);
+    }
+
+    [Fact]
+    public void A_later_download_does_not_add_empty_months_after_the_data()
+    {
+        // 2020–2024 events downloaded in 2026: ACLED timestamps are from 2026
+        var d = Parse(Collection(
+            Feature("a", "2024-10-10", "A"), Feature("b", "2024-11-10", "A"),
+            Feature("c", "2024-12-20", "A", timestamp: Unix(2026, 3, 5))));
+        Assert.Equal(new DateOnly(2024, 12, 1), d.LastCompleteMonth);
+        var r = ForecastService.Compute(d);
+        Assert.Equal("2025-01", r.TargetMonth);
+        Assert.Equal(new[] { 1, 1, 1 }, r.Cities.Single().Basis);
+        Assert.Null(r.PartialUntil);
     }
 
     [Fact]

@@ -71,6 +71,23 @@ public sealed class ApiTests : IDisposable
     }
 
     [Fact]
+    public async Task Ambiguous_county_name_asks_for_the_voivodeship()
+    {
+        var file = Path.Combine(Path.GetTempPath(), $"cz-dup-{Guid.NewGuid():N}.geojson");
+        File.WriteAllText(file, Collection(
+            Feature("A", "2024-11-02", "Tomaszowski", extra: new() { ["admin1"] = "Lubelskie" }),
+            Feature("B", "2024-11-03", "Tomaszowski", extra: new() { ["admin1"] = "Lodzkie" }, timestamp: Unix(2024, 12, 17))));
+        try
+        {
+            var c = Client(file);
+            Assert.Equal(HttpStatusCode.Conflict, (await c.GetAsync("/api/forecast/city/Tomaszowski")).StatusCode);
+            var one = await Json(await c.GetAsync("/api/forecast/city/tomaszowski?region=lodzkie"));
+            Assert.Equal("Lodzkie", one.GetProperty("city").GetProperty("region").GetString());
+        }
+        finally { File.Delete(file); }
+    }
+
+    [Fact]
     public async Task Missing_data_gives_a_clear_503_not_a_crash()
     {
         var c = Client(Path.Combine(Path.GetTempPath(), "does-not-exist.geojson"));

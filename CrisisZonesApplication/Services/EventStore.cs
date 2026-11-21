@@ -136,7 +136,7 @@ public sealed class EventStore
             FirstDate = events[0].Date,
             LastDate = last,
             ExtractDate = extract,
-            LastCompleteMonth = LastCompleteMonthOf(extract),
+            LastCompleteMonth = LastCompleteMonthOf(extract, last),
         };
     }
 
@@ -145,6 +145,19 @@ public sealed class EventStore
     {
         var month = new DateOnly(extract.Year, extract.Month, 1);
         return extract.Day == DateTime.DaysInMonth(extract.Year, extract.Month) ? month : month.AddMonths(-1);
+    }
+
+    /// <summary>
+    /// Last complete month of an extract: complete by the extract date, and not after the month of the
+    /// last event. ACLED timestamps record the last revision, so a 2020–2024 download made in 2026 has a
+    /// 2026 timestamp; without the second bound the months after the requested period would count as
+    /// complete months with zero events.
+    /// </summary>
+    public static DateOnly LastCompleteMonthOf(DateOnly extract, DateOnly lastEvent)
+    {
+        var byExtract = LastCompleteMonthOf(extract);
+        var lastEventMonth = new DateOnly(lastEvent.Year, lastEvent.Month, 1);
+        return byExtract < lastEventMonth ? byExtract : lastEventMonth;
     }
 
     private static string Or(string s, string fallback) => string.IsNullOrWhiteSpace(s) ? fallback : s;

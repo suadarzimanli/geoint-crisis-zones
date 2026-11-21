@@ -23,7 +23,7 @@
     @if (Store.IsAvailable)
     {
         <p>The app reads a local extract of the <a href="https://acleddata.com" target="_blank" rel="noopener">Armed Conflict Location &amp; Event Data (ACLED)</a> dataset for Poland:
-            <strong>@d.Events.Count.ToString("N0")</strong> events from @Day(d.FirstDate) to @Day(d.LastDate), in @d.Events.Select(e => e.Admin2).Distinct().Count() counties (ACLED <em>admin2</em>).
+            <strong>@d.Events.Count.ToString("N0")</strong> events from @Day(d.FirstDate) to @Day(d.LastDate), in @d.Events.Select(e => e.CountyKey).Distinct().Count() counties (ACLED <em>admin2</em>).
             The extract reflects ACLED’s records as of @Day(d.ExtractDate); the last complete month is @Month(d.LastCompleteMonth.ToString("yyyy-MM")).</p>
     }
     else

@@ -92,6 +92,14 @@
       showMapMessage(err.message);
       return;
     }
+    // A county is (voivodeship, county): ten county names exist in two voivodeships each
+    const regionsByName = new Map();
+    for (const e of state.events) {
+      e.key = `${e.region}|${e.city}`;
+      if (!regionsByName.has(e.city)) regionsByName.set(e.city, new Set());
+      regionsByName.get(e.city).add(e.region);
+    }
+    state.ambiguousNames = new Set([...regionsByName].filter(([, r]) => r.size > 1).map(([n]) => n));
     buildFilterOptions();
     $('filters').disabled = false;
     applyFilters();
@@ -105,10 +113,16 @@
     return [...m.entries()].sort((a, b) => b[1] - a[1] || String(a[0]).localeCompare(String(b[0])));
   }
 
-  function fillSelect(sel, entries, allLabel, keep = true) {
+  // "Tomaszowski" alone is ambiguous; show the voivodeship for names that exist in more than one
+  function countyLabel(key) {
+    const [region, city] = key.split('|');
+    return state.ambiguousNames && state.ambiguousNames.has(city) ? `${city} (${region})` : city;
+  }
+
+  function fillSelect(sel, entries, allLabel, keep = true, labelOf = (v) => v) {
     const current = sel.value;
     sel.replaceChildren(new Option(allLabel, ''));
-    for (const [value, n] of entries) sel.add(new Option(n == null ? value : `${value} (${nf.format(n)})`, value));
+    for (const [value, n] of entries) sel.add(new Option(n == null ? labelOf(value) : `${labelOf(value)} (${nf.format(n)})`, value));
     sel.value = keep && entries.some(([v]) => v === current) ? current : '';
   }
 
@@ -130,7 +144,7 @@
     const ev = state.events;
     fillSelect(F.sub, countBy(F.type.value ? ev.filter((e) => e.type === F.type.value) : ev, 'sub'), 'All sub-event types');
     const inRegion = F.region.value ? ev.filter((e) => e.region === F.region.value) : ev;
-    fillSelect(F.city, countBy(inRegion, 'city').sort((a, b) => a[0].localeCompare(b[0], 'pl')), 'All counties');
+    fillSelect(F.city, countBy(inRegion, 'key').sort((a, b) => countyLabel(a[0]).localeCompare(countyLabel(b[0]), 'pl')), 'All counties', true, countyLabel);
   }
 
   function applyFilters() {
@@ -140,7 +154,7 @@
     const keep = state.events.map((e) => {
       const m = e.date.slice(0, 7);
       return (!f.type || e.type === f.type) && (!f.sub || e.sub === f.sub) && (!f.region || e.region === f.region) &&
-        (!f.city || e.city === f.city) && (!f.interaction || e.interaction === f.interaction) &&
+        (!f.city || e.key === f.city) && (!f.interaction || e.interaction === f.interaction) &&
         (!from || m >= from) && (!to || m <= to);
     });
     state.visible = state.events.filter((_, i) => keep[i]);
@@ -478,7 +492,7 @@
     $('forecast-list').innerHTML = shown.length ? shown.map((c) => {
       const subs = Object.entries(c.predictedSubTypes).slice(0, 2).map(([k, v]) => `${esc(k)} ${nf1.format(v)}`).join(' · ');
       return `<li>
-        <button type="button" class="fc-item" data-city="${esc(c.city)}">
+        <button type="button" class="fc-item" data-key="${esc(c.key)}">
           <span class="fc-name"><strong>${esc(c.city)}</strong><span class="muted">${esc(c.region)}</span></span>
           <span class="fc-value"><strong>${nf1.format(c.predicted)}</strong><span class="muted small">events</span></span>
           <span class="fc-detail muted small">
@@ -499,11 +513,10 @@
   $('forecast-list').addEventListener('click', (e) => {
     const btn = e.target.closest('.fc-item');
     if (!btn) return;
-    const city = btn.dataset.city;
-    const ev = state.events.find((x) => x.city === city);
-    F.region.value = ev ? ev.region : '';
+    const key = btn.dataset.key;
+    F.region.value = key.split('|')[0];
     updateDependentOptions();
-    F.city.value = city;
+    F.city.value = key;
     applyFilters();
     fitToVisible();
     if (isPhone()) setSheet(false);
@@ -582,7 +595,7 @@
     barChart('c-types', 'b-types', countBy(v, 'type'));
     const subs = countBy(v, 'sub');
     barChart('c-subs', 'b-subs', subs.length > 8 ? [...subs.slice(0, 7), ['Other', subs.slice(7).reduce((s, e) => s + e[1], 0)]] : subs);
-    barChart('c-cities', 'b-cities', countBy(v, 'city').slice(0, 10));
+    barChart('c-cities', 'b-cities', countBy(v, 'key').slice(0, 10).map(([k, n]) => [countyLabel(k), n]));
   }
 
   document.addEventListener('cz-themechange', () => {

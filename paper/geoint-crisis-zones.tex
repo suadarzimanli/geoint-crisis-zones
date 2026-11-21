@@ -39,11 +39,11 @@
 \maketitle
 
 \begin{abstract}
-Event datasets such as ACLED make it possible to follow protest and political violence at the level of individual, geocoded events. Analysts and civil-protection staff need to move quickly from a national overview to the record of a single event, and they increasingly see short-term forecasts next to the map. This paper presents \appname{}, an open-source web application for the 7{,}794 ACLED events recorded in Poland from January 2020 to December 2024, and evaluates the next-month forecast it shows for each of the country's 341 counties.
+Event datasets such as ACLED make it possible to follow protest and political violence at the level of individual, geocoded events. Analysts and civil-protection staff need to move quickly from a national overview to the record of a single event, and they increasingly see short-term forecasts next to the map. This paper presents \appname{}, an open-source web application for the 7{,}794 ACLED events recorded in Poland from January 2020 to December 2024, and evaluates the next-month forecast it shows for each of the 351 counties in which events were recorded.
 
 The design follows the sequence \emph{overview, filter, details on demand}. Because ACLED geocodes most events to a town or district centre, 95.5\% of events share their exact coordinates with at least one other event (a single point in Warsaw holds 1{,}132), so the interface treats places, not points, as the unit of selection. The forecast is a three-month moving average whose inputs are displayed beside every value.
 
-The evaluation compares eight methods, from always predicting zero to a Random Forest, on 4{,}092 held-out county-months, with every method predicting each month only from earlier months. Among the methods that predict activity at all, accuracy differences are small: the Random Forest has the lowest root-mean-square error (1.35 events per county-month against 1.43 for the moving average), but a county-level bootstrap interval for the difference includes zero, and the moving average is more accurate on a six-month window. The ranking depends more on the evaluation design than on the method: when months without events are dropped and the methods draw on different information, the Random Forest appears 30\% more accurate than the moving average; when all methods see the same history, their errors on months with events are equal to two decimals. The results support a transparent baseline as the displayed forecast and argue for reporting forecast accuracy together with the protocol that produced it.
+The evaluation compares eight methods, from always predicting zero to a Random Forest, on 4{,}212 held-out county-months, with every method predicting each month only from earlier months. Among the methods that predict activity at all, accuracy differences are small: the Random Forest has the lowest root-mean-square error (1.34 events per county-month against 1.41 for the moving average), but a county-level bootstrap interval for the difference includes zero, and the moving average is more accurate on a six-month window. The ranking depends more on the evaluation design than on the method: when months without events are dropped and the methods draw on different information, the Random Forest appears 29\% more accurate than the moving average; when all methods see the same history, their errors on months with events differ by less than 0.03 events. The results support a transparent baseline as the displayed forecast and argue for reporting forecast accuracy together with the protocol that produced it.
 
 \medskip
 \noindent\textbf{Keywords:} geospatial intelligence; GEOINT; ACLED; conflict event data; protest; web GIS; count forecasting; forecast evaluation; Poland.
@@ -77,7 +77,7 @@ RQ1 is a design question, answered by an implemented application. RQ2--RQ4 are e
   \item \textbf{\appname{}}, an open-source web application (ASP.NET Core, Google Maps, Chart.js) for exploring ACLED events in Poland, with filters, linked charts, place-level event browsing and a county forecast panel that shows the months behind every value and the method's measured accuracy (\S\ref{sec:design}).
   \item A \textbf{description of the Polish event record} as a forecasting problem: sparse, spatially concentrated and shaped by a few national protest waves (\S\ref{sec:data}, \S\ref{sec:res-patterns}).
   \item A \textbf{forecast evaluation} of eight methods with a rolling one-step-ahead protocol, three test windows, several metrics and county-level bootstrap intervals (\S\ref{sec:eval}, \S\ref{sec:res-accuracy}).
-  \item A \textbf{demonstration of protocol sensitivity}: the same methods ranked under two evaluation designs, showing how an apparent 30\% advantage of a learned model arises from the design rather than the model (\S\ref{sec:res-protocol}).
+  \item A \textbf{demonstration of protocol sensitivity}: the same methods ranked under two evaluation designs, showing how an apparent 29\% advantage of a learned model arises from the design rather than the model (\S\ref{sec:res-protocol}).
 \end{enumerate}
 
 The code, the evaluation and the aggregated data are public \cite{repo}. Raw ACLED records are not redistributed (\S\ref{sec:data-licence}).
@@ -108,7 +108,7 @@ Monthly event counts per small area are non-negative integers, mostly zero. This
 
 \subsection{Source and coverage}
 
-The analysis uses all ACLED events for Poland dated from 2 January 2020 to 13 December 2024: 7{,}794 events in 341 counties (ACLED \emph{admin2}; \emph{powiaty} and cities with county rights) and all 16 voivodeships. The extract reflects ACLED's records as of 17 December 2024, the newest update timestamp it contains. December 2024 is therefore only partly covered, and the analysis treats January 2020 to November 2024 (59 months, 7{,}756 events) as the complete period. The application applies the same rule automatically: a month counts as complete only if the extract was taken on or after its last day.
+The analysis uses all ACLED events for Poland dated from 2 January 2020 to 13 December 2024: 7{,}794 events in 351 counties (ACLED \emph{admin2}; \emph{powiaty} and cities with county rights) and all 16 voivodeships. The extract reflects ACLED's records as of 17 December 2024, the newest update timestamp it contains. December 2024 is therefore only partly covered, and the analysis treats January 2020 to November 2024 (59 months, 7{,}756 events) as the complete period. The application applies the same rule automatically: a month counts as complete only if the extract was taken on or after its last day.
 
 Each record keeps ACLED's original fields. The application uses the date, type and sub-type, interaction, actors, administrative units, location name, coordinates and precision, fatalities, sources and the narrative note. The event identifier (\texttt{event\_id\_cnty}) is the key for showing an individual record.
 
@@ -233,7 +233,7 @@ The event loader validates every record (identifier, date, coordinates within va
 
 \subsection{Task and data}
 
-The task is to predict the number of ACLED events in each county in the next calendar month. The evaluation uses the 59 complete months and all 341 counties that recorded at least one event, giving 20{,}119 county-months; 85.2\% of them have no events. Months without events are included as zeros.
+The task is to predict the number of ACLED events in each county in the next calendar month. The evaluation uses the 59 complete months and all 351 counties that recorded at least one event, giving 20{,}709 county-months; 85.5\% of them have no events. A county is identified by its voivodeship and name together, because ten county names occur in two voivodeships each (for example, Tomaszowski in Lubelskie and in Łódzkie). Months without events are included as zeros.
 
 \subsection{Methods}
 
@@ -252,7 +252,7 @@ The two learned models are fitted once on all months before the test window \cit
 
 \subsection{Protocol}
 
-The protocol is a rolling one-step-ahead evaluation. Every month in the test window is predicted from the observed months before it, and all methods receive the same history. The primary test window is the last 12 complete months (December 2023 to November 2024; 4{,}092 county-months, 619 of them with events); windows of 6 and 24 months are reported as sensitivity checks.
+The protocol is a rolling one-step-ahead evaluation. Every month in the test window is predicted from the observed months before it, and all methods receive the same history. The primary test window is the last 12 complete months (December 2023 to November 2024; 4{,}212 county-months, 623 of them with events); windows of 6 and 24 months are reported as sensitivity checks.
 
 \subsection{Metrics and uncertainty}
 
@@ -269,30 +269,30 @@ To answer RQ4, the moving average, the naive method and the Random Forest are al
 \subsection{Spatial and temporal structure (RQ2)}
 \label{sec:res-patterns}
 
-Activity is concentrated. Warsaw alone accounts for 14.5\% of events (1{,}133), and the five largest cities---Warsaw, Kraków, Poznań, Wrocław and Gdańsk---for 29.1\%; the ten most active counties for 39.7\%. The median county recorded 8 events in five years, and 131 counties recorded five or fewer. In time, the record combines a slowly varying level with short national waves (Figure~\ref{fig:monthly}) that start abruptly in response to political events. For forecasting, this means that most county-months are zero, that the few active counties dominate any squared-error measure, and that the largest errors will occur at the start of waves, which no method based on recent counts can anticipate.
+Activity is concentrated. Warsaw alone accounts for 14.5\% of events (1{,}133), and the five largest cities---Warsaw, Kraków, Poznań, Wrocław and Gdańsk---for 29.1\%; the ten most active counties for 39.7\%. The median county recorded 7 events in five years, and 140 counties recorded five or fewer. In time, the record combines a slowly varying level with short national waves (Figure~\ref{fig:monthly}) that start abruptly in response to political events. For forecasting, this means that most county-months are zero, that the few active counties dominate any squared-error measure, and that the largest errors will occur at the start of waves, which no method based on recent counts can anticipate.
 
 \subsection{Forecast accuracy (RQ3)}
 \label{sec:res-accuracy}
 
-Table~\ref{tab:accuracy} and Figure~\ref{fig:rmse} report the primary window. Ordered by RMSE, the Random Forest is first (1.35), followed by the 3-month moving average (1.43) and the naive forecast (1.43); always predicting zero is last (1.85). Ordered by MAE, the order reverses: always zero has the lowest MAE (0.42), because it is right in 85\% of county-months, while missing every active month by 2.8 events on average. The Poisson deviance favours the two count models, whose forecasts are never exactly zero.
+Table~\ref{tab:accuracy} and Figure~\ref{fig:rmse} report the primary window. Ordered by RMSE, the Random Forest is first (1.34), followed by the 3-month moving average (1.41) and the naive forecast (1.42); always predicting zero is last (1.82). Ordered by MAE, the order reverses: always zero has the lowest MAE (0.41), because it is right in 85\% of county-months, while missing every active month by 2.8 events on average. The Poisson deviance favours the two count models, whose forecasts are never exactly zero.
 
 \begin{table}[htbp]
 \centering
 \small
-\caption{Accuracy on December 2023 to November 2024 (4{,}092 county-months; 619 with events). Sorted by RMSE; lower is better.}
+\caption{Accuracy on December 2023 to November 2024 (4{,}212 county-months; 623 with events). Sorted by RMSE; lower is better.}
 \label{tab:accuracy}
 \begin{tabular}{lrrrr}
 \toprule
 Method & MAE & RMSE & MAE, months with events & Poisson deviance \\
 \midrule
-Random Forest (lags + month) & 0.504 & 1.351 & 1.915 & 1.354 \\
-3-month moving average & 0.483 & 1.426 & 1.914 & 3.608 \\
-Last month (naive) & 0.441 & 1.434 & 1.932 & 4.402 \\
-Poisson GLM (lags) & 0.512 & 1.462 & 2.001 & 1.209 \\
-6-month moving average & 0.525 & 1.523 & 1.938 & 3.375 \\
-Historical mean & 0.510 & 1.541 & 2.056 & 1.641 \\
-Same month last year & 0.434 & 1.726 & 2.204 & 7.258 \\
-Always zero & 0.419 & 1.852 & 2.771 & -- \\
+Random Forest (lags + month) & 0.492 & 1.336 & 1.935 & 1.329 \\
+3-month moving average & 0.472 & 1.409 & 1.913 & 3.558 \\
+Last month (naive) & 0.433 & 1.419 & 1.936 & 4.325 \\
+Poisson GLM (lags) & 0.500 & 1.449 & 2.008 & 1.189 \\
+6-month moving average & 0.512 & 1.501 & 1.937 & 3.314 \\
+Historical mean & 0.497 & 1.518 & 2.047 & 1.618 \\
+Same month last year & 0.422 & 1.698 & 2.189 & 7.046 \\
+Always zero & 0.407 & 1.823 & 2.753 & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -304,16 +304,16 @@ Always zero & 0.419 & 1.852 & 2.771 & -- \\
 \label{fig:rmse}
 \end{figure}
 
-The differences among the leading methods are small relative to their uncertainty. The bootstrap difference in RMSE between the moving average and the Random Forest is $+0.074$ (95\% interval $-0.082$ to $+0.234$); between the moving average and the naive forecast $-0.008$ ($-0.178$ to $+0.169$); and between the moving average and the Poisson GLM $-0.037$ ($-0.129$ to $+0.069$). None of the intervals excludes zero.
+The differences among the leading methods are small relative to their uncertainty. The bootstrap difference in RMSE between the moving average and the Random Forest is $+0.073$ (95\% interval $-0.081$ to $+0.226$); between the moving average and the naive forecast $-0.010$ ($-0.185$ to $+0.177$); and between the moving average and the Poisson GLM $-0.040$ ($-0.133$ to $+0.066$). None of the intervals excludes zero.
 
-The ranking also changes with the window. On the last 6 months, a quiet period with 135 active county-months, the Poisson GLM has the lowest RMSE (0.66), followed by the moving average (0.72) and the Random Forest (0.75). On the last 24 months the Random Forest (1.17), the moving average (1.18) and the Poisson GLM (1.20) are within 0.03 of each other. Split by county activity, the Random Forest gains most in counties with a moderate level of events (0.5 to 2 per month: RMSE 2.87 against 3.17), whereas in the most active counties (more than 2 per month) the moving average is marginally better (2.86 against 2.88).
+The ranking also changes with the window. On the last 6 months, a quiet period with 135 active county-months, the Poisson GLM has the lowest RMSE (0.65), followed by the moving average (0.71) and the Random Forest (0.72). On the last 24 months the Random Forest (1.16), the moving average (1.17) and the Poisson GLM (1.18) are within 0.03 of each other. Split by county activity, the Random Forest gains most in counties with a moderate level of events (0.5 to 2 per month: RMSE 2.96 against 3.25), whereas in the most active counties (more than 2 per month) the moving average is slightly better (2.84 against 2.89).
 
-The backtest computed by the application matches the evaluation script for the three methods it reports to three decimals (moving average 0.483 and 1.426, naive 0.441 and 1.434, always zero 0.419 and 1.852, as MAE and RMSE), which confirms that the displayed accuracy describes the displayed forecast.
+The backtest computed by the application matches the evaluation script for the three methods it reports to three decimals (moving average 0.472 and 1.409, naive 0.433 and 1.419, always zero 0.407 and 1.823, as MAE and RMSE), which confirms that the displayed accuracy describes the displayed forecast.
 
 \subsection{Effect of the evaluation design (RQ4)}
 \label{sec:res-protocol}
 
-Figure~\ref{fig:protocol} compares the two designs on the same test months. Under the events-only design, the Random Forest's MAE is 1.68 against 2.42 for the moving average and 2.60 for the naive forecast: an apparent 30\% advantage. When the same methods are scored on the same county-months with the same information, the three MAEs are 1.92, 1.91 and 1.93. The apparent advantage comes from the design: the baselines were denied the months they are defined on, while the learned model's lags came from the test period. Dropping months without events changes the picture further, because it removes exactly the cases in which persistence forecasts are most often right.
+Figure~\ref{fig:protocol} compares the two designs on the same test months. Under the events-only design, the Random Forest's MAE is 1.70 against 2.40 for the moving average and 2.58 for the naive forecast: an apparent 29\% advantage. When the same methods are scored on the same county-months with the same information, the three MAEs are 1.94, 1.91 and 1.94. The apparent advantage comes from the design: the baselines were denied the months they are defined on, while the learned model's lags came from the test period. Dropping months without events changes the picture further, because it removes exactly the cases in which persistence forecasts are most often right.
 
 \begin{figure}[htbp]
 \centering
@@ -355,7 +355,7 @@ The application displays ACLED's published summaries of public events. Narrative
 \section{Conclusion}
 \label{sec:conclusion}
 
-\appname{} shows that an event dataset of several thousand records can be explored from national overview to individual event on desktop and phone, provided the interface treats places rather than points as the unit of selection: in the Polish ACLED record, 95.5\% of events share a location with others. For next-month county forecasts, a three-month moving average is statistically indistinguishable from the best of seven alternatives, including a Random Forest, and has the advantage that every value can be checked. How a forecast is evaluated changed the conclusions more than which forecast was used: the same Random Forest appears 30\% more accurate than the moving average under one plausible design and equal to it under a design in which all methods see the same information. Forecast panels in GEOINT applications should therefore report accuracy together with the protocol, the metric and trivial baselines.
+\appname{} shows that an event dataset of several thousand records can be explored from national overview to individual event on desktop and phone, provided the interface treats places rather than points as the unit of selection: in the Polish ACLED record, 95.5\% of events share a location with others. For next-month county forecasts, a three-month moving average is statistically indistinguishable from the best of seven alternatives, including a Random Forest, and has the advantage that every value can be checked. How a forecast is evaluated changed the conclusions more than which forecast was used: the same Random Forest appears 29\% more accurate than the moving average under one plausible design and practically equal to it (within 0.03 events on months with events) under a design in which all methods see the same information. Forecast panels in GEOINT applications should therefore report accuracy together with the protocol, the metric and trivial baselines.
 
 \section*{Data and code availability}
 
@@ -397,7 +397,7 @@ Source code, tests, the evaluation script, the aggregated county-month counts an
 
 \bibitem{raleigh2023} C.~Raleigh, R.~Kishi, and A.~Linke, ``Political instability patterns are obscured by conflict dataset scope conditions, sources, and coding choices,'' \emph{Humanities and Social Sciences Communications}, vol.~10, 74, 2023.
 
-\bibitem{repo} S.~Arzimanli, \emph{Crisis Zones: source code, evaluation and aggregated data}, version 1.1.0, 2026. \url{\repourl}, doi:10.5281/zenodo.24417729
+\bibitem{repo} S.~Arzimanli, \emph{Crisis Zones: source code, evaluation and aggregated data}, version 1.2.0, 2026. \url{\repourl}, doi:10.5281/zenodo.24417729
 
 \bibitem{shneiderman1996} B.~Shneiderman, ``The eyes have it: A task by data type taxonomy for information visualizations,'' in \emph{Proc. IEEE Symposium on Visual Languages}, 1996, pp.~336--343.
 
